@@ -423,6 +423,7 @@
   </div>
 </div>
 
+<script>var developerIntroActive = true;</script>
 <script>
   (function() {
     // ============================================================
@@ -549,6 +550,7 @@
     // ============================================================
     // GAME STATE
     // ============================================================
+    let developerIntroActive = true;
     let gameState = 'menu';
     let score = 0, coins = 0, totalCoins = parseInt(localStorage.getItem('onemorestep_totalCoins')) || 0;
     let bestScore = parseInt(localStorage.getItem('onemorestep_best')) || 0;
@@ -645,7 +647,8 @@
       generateInitialTiles();
       gameState = 'playing';
       bestSpan.textContent = bestScore;
-      if (soundEnabled) { initAudio(); playBackgroundMusic(); }
+      // Never start audio from initGame(). Audio is started only by PLAY.
+      if (developerIntroActive) stopBackgroundMusic();
     }
 
     // ============================================================
@@ -1243,6 +1246,7 @@
     // START GAME
     // ============================================================
     function startGame() {
+      if (developerIntroActive) return;
       initAudio();
       startMenu.classList.add('hidden');
       initGame();
@@ -1280,7 +1284,7 @@
     // Every tap/click refreshes the survival timer. Stop tapping for 1 second and the game ends.
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      if (gameState === 'menu') { startGame(); return; }
+      if (gameState === 'menu') { if (!developerIntroActive) startGame(); return; }
       if (gameState === 'gameover') { initGame(); return; }
       if (gameState === 'playing') {
         lastTapTime = performance.now();
@@ -1300,7 +1304,7 @@
     }, { passive: false });
 
     canvas.addEventListener('mousedown', (e) => {
-      if (gameState === 'menu') { startGame(); return; }
+      if (gameState === 'menu') { if (!developerIntroActive) startGame(); return; }
       if (gameState === 'gameover') { initGame(); return; }
       if (gameState === 'playing') {
         lastTapTime = performance.now();
@@ -1330,9 +1334,11 @@
     // Then the intro fades out and the normal ONE MORE STEP game title + PLAY button appear.
     const developerIntro = document.getElementById('developerIntro');
     setTimeout(() => {
+      developerIntroActive = false;
+      stopBackgroundMusic();
       developerIntro.classList.add('fade-out');
       startMenu.classList.remove('intro-hidden');
-    }, 25000);
+    }, 10000);
 
     loop();
 
@@ -1342,5 +1348,20 @@
     console.log('⚡ Difficulty increases over time!');
   })();
 </script>
+
+<script>
+(function(){
+  function stopIntroAudio(){
+    if (!developerIntroActive) return;
+    if (typeof stopBackgroundMusic === 'function') stopBackgroundMusic();
+    document.querySelectorAll('audio').forEach(function(a){
+      try { a.pause(); a.currentTime = 0; } catch(e) {}
+    });
+  }
+  stopIntroAudio();
+  setInterval(stopIntroAudio, 100);
+})();
+</script>
+
 </body>
 </html>
